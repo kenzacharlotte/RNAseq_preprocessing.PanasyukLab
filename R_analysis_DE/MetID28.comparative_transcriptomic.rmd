@@ -1,0 +1,258 @@
+---
+title: "Comparative Transcriptomic"
+output: pdf_document
+date: "2026-01-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+```
+
+## Comparative Transcriptomic - Naive vs Memory fasting response
+```{r}
+memory.fasted_vs_fed <- as.data.frame(readRDS("MetID28_res_memory.RDS"))
+naive.fasted_vs_fed <- as.data.frame(readRDS("MetID28_res_naive.RDS"))
+memory.fasted_vs_fed$geneID <- rownames(memory.fasted_vs_fed)
+naive.fasted_vs_fed$geneID <- rownames(naive.fasted_vs_fed)
+
+head(memory.fasted_vs_fed)
+head(naive.fasted_vs_fed)
+dim(memory.fasted_vs_fed)
+```
+```{r}
+padj_T <- 0.01
+
+memory_all_directedpadj <- -log10(memory.fasted_vs_fed$padj)*sign(memory.fasted_vs_fed$log2FoldChange)
+naive_all_directedpadj <- -log10(naive.fasted_vs_fed$padj)*sign(naive.fasted_vs_fed$log2FoldChange)
+
+res_comp <- data.frame(memory_dirpVal = memory_all_directedpadj, 
+                       naive_dirpVal = naive_all_directedpadj, 
+                       memory_l2fc = memory.fasted_vs_fed$log2FoldChange,
+                       memory_padj = memory.fasted_vs_fed$padj,
+                       naive_l2fc = naive.fasted_vs_fed$log2FoldChange,
+                       naive_padj = naive.fasted_vs_fed$padj)
+
+res_comp$padj_comp <- "NS"
+res_comp$padj_comp[res_comp$memory_padj < padj_T & res_comp$naive_padj < padj_T]<- "sign_memo_and_naive"
+res_comp$padj_comp[res_comp$memory_padj < padj_T  & res_comp$naive_padj > padj_T]<- "sign_memo"
+res_comp$padj_comp[res_comp$naive_padj < padj_T & res_comp$memory_padj > padj_T]<- "sign_naive"
+
+rownames(res_comp) <- memory.fasted_vs_fed$geneID
+
+res_comp <- na.omit(res_comp)
+head(res_comp)
+```
+
+## Directed pValue : Memory against Naive
+```{r}
+ggplot(res_comp, aes(x = memory_dirpVal, y = naive_dirpVal)) +
+  geom_abline(aes(intercept = 0, slope = 1), size = 0.7,linetype = 'dashed') +
+  geom_point(aes(fill = padj_comp), color = "black", shape = 21, size = 2, alpha = 0.5, stroke = 0.3) +
+  scale_fill_manual(name = "",values = c("#d9d9d9", "#8c96c6", "#810f7c", "dodgerblue4", "#d9d9d9"),
+                     labels = c("not significant", 
+                                "significant in x direction",
+                                "significant in both directions",
+                                "significant in y direction"))+
+  coord_fixed(ratio = 1, xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")+
+  theme_minimal() +
+  labs(x = "Directed pValue \nMemory fasted vs fed",
+       y = "Directed pValue \nNaive fasted vs fed",
+       title = "Comparative transcriptomic")
+ggsave("images/MetID28.comparative_trans.directed_pvalue.png")
+```
+## L2FC pValue : Memory against Naive
+  geom_abline(aes(intercept = 0, slope = 1, colour = "x = y"), size = 0.7) +
+  geom_smooth(aes(colour = "Linear regression"), method = "lm", se = FALSE, size = 0.7) +
+    scale_colour_manual(name = "Lines", values = c("x = y" = "black", "Linear regression" = "blue")) +
+
+```{r}
+
+ggplot(res_comp, aes(x = memory_l2fc, y = naive_l2fc)) +
+  geom_abline(aes(intercept = 0, slope = 1, colour = "x = y"), size = 0.7,linetype = 'dashed') +
+  geom_vline(xintercept = c(-0.3, 0.3), col = "gray", linetype = 'dashed') +
+  geom_hline(yintercept = c(-0.3,0.3), col = "gray", linetype = 'dashed')+
+  geom_point(aes(fill = padj_comp), color = "black", shape = 21, size = 2, alpha = 0.7, stroke = 0.3) +
+  scale_fill_manual(name = "",values = c("#d9d9d9", "#8c96c6", "#810f7c", "dodgerblue4", "#d9d9d9"),
+                     labels = c("not significant", 
+                                "significant in x direction",
+                                "significant in both directions",
+                                "significant in y direction"))+
+                coord_fixed( ratio=1) +
+theme_minimal() +
+  labs(x = "l2fc \nMemory fasted vs fed",
+       y = "l2fc  \nNaive fasted vs fed",
+       title = "Comparative l2fc")
+ggsave("images/MetID28.comparative_trans.L2FC.png")
+
+```
+```{r}
+# calcul des limites communes
+lims <- range(c(res_comp_sig$memory_l2fc, res_comp$naive_l2fc), na.rm = TRUE)
+
+ggplot(res_comp_sig, aes(x = memory_l2fc, y = naive_l2fc)) +
+  geom_smooth(aes(colour = "Linear regression"), method = "lm", se = FALSE, size = 0.7) +
+  geom_abline(aes(intercept = 0, slope = 1, colour = "x = y"),size = 0.7, linetype = 'dashed') +
+  geom_vline(xintercept = c(-0.3, 0.3), col = "gray", linetype = 'dashed') +
+  geom_hline(yintercept = c(-0.3, 0.3), col = "gray", linetype = 'dashed') +
+  geom_point(aes(fill = padj_comp),
+             color = "black", shape = 21, size = 2, alpha = 0.7, stroke = 0.3) +
+  scale_fill_manual(
+    name = "",
+    values = c("#8c96c6", "#810f7c", "dodgerblue4", "#d9d9d9","black","red"),
+    labels = c("significant in x direction",
+               "significant in both directions",
+               "significant in y direction")
+  ) +
+  
+  scale_x_continuous(limits = lims) +
+  scale_y_continuous(limits = lims) +
+  
+  coord_fixed() +
+  theme_minimal() +
+  labs(
+    x = "l2fc \nMemory fasted vs fed",
+    y = "l2fc  \nNaive fasted vs fed",
+    title = "Comparative l2fc"
+  )
+ggsave("images/MetID28.comparative_trans.sig.L2FC-lm.png")
+```
+
+```{r}
+res_comp_sig <- res_comp[!res_comp$padj_comp == "NS",] 
+
+ggplot(res_comp_sig, aes(x = memory_l2fc, y = naive_l2fc)) +
+  
+  geom_abline(aes(intercept = 0, slope = 1, colour = "x = y"), size = 0.7,linetype = 'dotted') +
+  geom_vline(xintercept = c(-0.3, 0.3), col = "gray", linetype = 'dashed') +
+  geom_hline(yintercept = c(-0.3,0.3), col = "gray", linetype = 'dashed')+
+  geom_point(aes(fill = padj_comp), color = "black", shape = 21, size = 2, alpha = 0.7, stroke = 0.3) +
+  scale_fill_manual(name = "",values = c("#8c96c6", "#810f7c", "dodgerblue4", "#d9d9d9"),
+                     labels = c("significant in x direction",
+                                "significant in both directions",
+                                "significant in y direction"))+
+  theme_minimal() +
+  labs(x = "l2fc \nMemory fasted vs fed",
+       y = "l2fc  \nNaive fasted vs fed",
+       title = "Comparative l2fc - significant padj")
+ggsave("images/MetID28.comparative_trans.L2FCsig.png")
+```
+### Testing if there is a shift in memory response 
+Null hypothesis : The observations 
+X−Y are symmetric about μ = 0
+
+## Testing Wilcoxon on sig DEgs in at least one condition
+```{r}
+#selecting genes that are significant in at least one condition (naive|memory) - and L2FC strong in at least one cdt
+res_comp_sig <- res_comp_sig[abs(res_comp_sig$memory_l2fc)>0.3 | abs(res_comp_sig$naive_l2fc)>0.3,]
+
+wilcox.test(res_comp_sig$memory_l2fc, res_comp_sig$naive_l2fc, paired = TRUE)
+```
+
+## Testing Wilcoxon on sig DEgs in both conditions
+Test de Wilcoxon apparié : Il nécessite l'hypothèse que la différence entre les échantillons appariés suit une distribution symétrique autour d'un centre. Le but étant de tester si ce centre est 0.
+```{r}
+#selecting genes that are significant in both condition (naive|memory)
+res_comp_sigboth <- res_comp_sig[res_comp_sig$padj_comp=="sign_memo_and_naive",]
+res_comp_sigboth <- res_comp_sigboth[abs(res_comp_sigboth$memory_l2fc)>0.3 | abs(res_comp_sigboth$naive_l2fc)>0.3,]
+wilcox.test(res_comp_sigboth$memory_l2fc, res_comp_sigboth$naive_l2fc, paired = TRUE)
+```
+```{r}
+wilcox.test(abs(res_comp_sigboth$memory_l2fc-res_comp_sigboth$naive_l2fc), alternative = "greater")
+```
+Alternative hypothesis - One sided H : The observations 
+The observations 
+abs(l2fc_memory−l2fc_naive) are symmetric about μ > 0
+
+```{r}
+ggplot(res_comp, aes(x = memory_l2fc, y = naive_l2fc)) +
+  geom_abline(aes(intercept = 0, slope = 1, colour = "x = y"), size = 0.7, linetype = 'dashed') +
+  geom_vline(xintercept = c(-0.3, 0.3), col = "gray", linetype = 'dashed') +
+  geom_hline(yintercept = c(-0.3, 0.3), col = "gray", linetype = 'dashed') +
+  geom_point(aes(fill = padj_comp), color = "black", shape = 21, size = 2, alpha = 0.7, stroke = 0.3) +
+  scale_fill_manual(name = "", values = c("#d9d9d9", "#8c96c6", "#810f7c", "dodgerblue4", "#d9d9d9"),
+    labels = c("not significant", 
+               "significant in x direction",
+               "significant in both directions",
+               "significant in y direction")) +
+  
+  theme_minimal() +
+  labs( x = "l2fc \nMemory fasted vs fed", y = "l2fc  \nNaive fasted vs fed", title = "Comparative l2fc")
+
+```
+
+
+### Apply threshold
+```{r}
+naive.fasted_vs_fed <- na.omit(naive.fasted_vs_fed)
+memory.fasted_vs_fed <- na.omit(memory.fasted_vs_fed)
+```
+
+```{r}
+padj <- 0.01 
+L2FC <- 0.3 # FC of 1.2
+
+naive.fasted_vs_fed <- naive.fasted_vs_fed[naive.fasted_vs_fed$padj < padj 
+                                           & abs(naive.fasted_vs_fed$log2FoldChange) > L2FC,]
+memory.fasted_vs_fed <- memory.fasted_vs_fed[memory.fasted_vs_fed$padj < padj 
+                                           & abs(memory.fasted_vs_fed$log2FoldChange) > L2FC,]
+```
+
+### Filter genes that are present in naive and memory response 
+Compared to their own reference : memo is 2FC whie naive is 1FC
+```{r}
+memory.fasted_vs_fed$geneID <- rownames(memory.fasted_vs_fed)
+naive.fasted_vs_fed$geneID <- rownames(naive.fasted_vs_fed)
+
+commonGenes <- memory.fasted_vs_fed$geneID[memory.fasted_vs_fed$geneID %in% naive.fasted_vs_fed$geneID]
+length(commonGenes) #2046
+```
+
+### Compute directed pvalue
+-log10(padj)*L2FC
+```{r}
+memory.fasted_vs_fed$padj.minuslog10 <- -log10(memory.fasted_vs_fed$pvalue)
+memory.fasted_vs_fed$directed.padj <- memory.fasted_vs_fed$padj.minuslog10*memory.fasted_vs_fed$log2FoldChange
+
+memory_directed.padj <- memory.fasted_vs_fed$directed.padj[memory.fasted_vs_fed$geneID %in% commonGenes]
+
+naive.fasted_vs_fed$padj.minuslog10 <- -log10(naive.fasted_vs_fed$pvalue)
+naive.fasted_vs_fed$directed.padj <- naive.fasted_vs_fed$padj.minuslog10*naive.fasted_vs_fed$log2FoldChange
+
+naive_directed.padj <- naive.fasted_vs_fed$directed.padj[naive.fasted_vs_fed$geneID %in% commonGenes]
+```
+
+```{r}
+naive_cl2FC <- naive.fasted_vs_fed$log2FoldChange[naive.fasted_vs_fed$geneID %in% commonGenes]
+memory_cl2FC <- memory.fasted_vs_fed$log2FoldChange[memory.fasted_vs_fed$geneID %in% commonGenes]
+
+```
+
+```{r}
+data <- data.frame( naive_dirpadj = naive_directed.padj,memory_dirpadj = memory_directed.padj, memory_L2FC = memory_cl2FC, naive_L2FC = naive_cl2FC)
+rownames(data) <- commonGenes
+```
+
+```{r}
+ggplot(data, aes(x = memory, y = naive))+
+  geom_abline(intercept = 0, slope = 1)+
+  geom_point(size = 1.5,alpha=0.3) +
+  theme_minimal()+
+  ggtitle("Directed pvalue : log10(padj).L2FC")
+ggsave("images/MetID28.comparative_trans.DirectedPval_log10padj_x_L2FC.png")
+```
+```{r}
+ggplot(data, aes(x = memory_L2FC, y = naive_L2FC))+
+  geom_abline(intercept = 0, slope = 1)+
+  geom_smooth(method='lm')+
+  geom_point(size = 1.5,alpha=0.3) +
+  theme_minimal()+
+  ggtitle("Sig common DEgenes in fasting response - L2FC")
+ggsave("images/MetID28.comparative_trans.L2FC.png")
+```
+
+
+
