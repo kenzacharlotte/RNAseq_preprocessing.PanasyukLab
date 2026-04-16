@@ -1,8 +1,9 @@
-# RNAseq_Analysis
-*Basic RNAseq analysis workflow.*
-<img align="center" src="./RNAseq_preprocessing_pipeline.png" alt="RNAseq preprocessing" width="200"> 
+# RNAseq_Analysis: Preprocessing
+>*Basic RNAseq analysis workflow: to run either locally or on a server.*
+>Next RNAseq workflow will include HPC usage with parallelisation of jobs with slurm.
 
-Next RNAseq workflow will include HPC usage with parallelisation of jobs.
+<img align="center" src="./RNAseq_preprocessing_pipeline.png" alt="RNAseq preprocessing" width="1500"> 
+
 
 ## A - PREPROCESSING 
 ##### *Structure*
