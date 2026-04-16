@@ -1,5 +1,6 @@
 # RNAseq_Analysis
-*Basic RNAseq analysis workflow*
+*Basic RNAseq analysis workflow.
+Next RNAseq workflow will include HPC usage with parallelisation of jobs.*
 
 ## A - PREPROCESSING 
 ##### *Structure*
