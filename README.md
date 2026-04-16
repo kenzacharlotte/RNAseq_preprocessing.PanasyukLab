@@ -5,7 +5,7 @@
 <img align="center" src="./RNAseq_preprocessing_pipeline.png" alt="RNAseq preprocessing" width="1500"> 
 
 
-## A - PREPROCESSING 
+## Create your environment 
 ##### *Structure*
 
 ```py
@@ -32,7 +32,7 @@ md5sum_check.sh
 - check if the md5sum are matching in `md5sum.out`
 - writes in `md5sum.out` the files that are not matching
 
-##### *Quality check*
+## Quality check
 ```py
 qualitycheck_fastqc.sh
 ```
@@ -42,8 +42,7 @@ For more informations about fastqc check https://www.bioinformatics.babraham.ac.
 
 ##### *Trimming (optionnal)*
 
-## B - PROCESSING 
-##### *Alignment - STAR*
+## Alignment *STAR*
 1 - Build STAR
 - gtf file needed
 ```py
@@ -53,16 +52,18 @@ build_STAR_index.sh
 ```py
 STAR_alignment.sh
 ```
-##### *Counting features - featurecounts*
-1 - Sort bam
 
+## Sort bam
 ```py
 sort_bam.sh
 ```
+## Gene quantification
+#####  *Counting features - featurecounts*
+
 ```py
 featurecounts.sh
 ```
-## C - R analysis with Deseq2
+## What's next ? 
 - Exploring Dataset
 - Create Deseq object
 - Visualization
