@@ -4,7 +4,6 @@
 
 <img align="center" src="./RNAseq_preprocessing_pipeline.png" alt="RNAseq preprocessing" width="1500"> 
 
-
 ## Create your environment 
 ##### *Structure*
 
